@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Protocol;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -14,7 +15,7 @@ namespace ServerHandler
         public List<string> Clients;
         public Dictionary<string, List<string>> MessageBox;
         TcpListener listener;
-
+        
         private static Server server;
 
         private Server()
@@ -22,7 +23,7 @@ namespace ServerHandler
             Clients = new List<string>() {"tuts", "tuts2" };
             MessageBox = new Dictionary<string, List<string>>();
 
-            IPAddress ipAd = IPAddress.Parse("192.168.56.1");
+            IPAddress ipAd = IPAddress.Parse("127.0.0.1");
 
             listener = new TcpListener(ipAd, 8001);
 
@@ -37,7 +38,6 @@ namespace ServerHandler
 
         public void Listen()
         {
-            int counter = 0;
             /* Start Listeneting at the specified port */
             listener.Start();
 
@@ -48,8 +48,6 @@ namespace ServerHandler
 
             while (true)
             {
-                counter += 1;
-
                 Socket s = listener.AcceptSocket();
                 Console.WriteLine("Connection accepted from " + s.RemoteEndPoint);
 
@@ -64,6 +62,8 @@ namespace ServerHandler
         {
             return Clients.Contains(name);
         }
+
+        
 
         ~Server()
         {

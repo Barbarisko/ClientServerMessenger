@@ -33,23 +33,32 @@ namespace ServerHandler
                 ASCIIEncoding asen = new ASCIIEncoding();
                 var str = asen.GetString(b);
                 Message message = JsonConvert.DeserializeObject<Message>(str);
-
+                
+                object msg;
                 switch (message.Command)
-                {
+                {    
                     case Commands.Hello:
-                        ClientName = message.Body;
+                        msg = JsonConvert.DeserializeObject<MessageHello>(str);
+                        ClientName = ((MessageHello)msg).Body;
 
                         if (Server.GetServer().ClientExists(ClientName))
-                            message = new Message(Commands.HelloResponse, HelloAnswers.OK.ToString());
+                            message = new MessageHelloResponce(HelloAnswers.OK);
 
                         else
                         {
-                            message = new Message(Commands.HelloResponse, HelloAnswers.jopa.ToString());
+                            message = new MessageHelloResponce(HelloAnswers.jopa);
                             socket.Send(asen.GetBytes(message.ToString()));
                             socket.Close();
                             return;
                         }
 
+                        break;
+                    case Commands.GiveList:
+                        msg = JsonConvert.DeserializeObject<MessageRequestList>(str);
+                        message = new MessageReturnList(Server.GetServer().Clients);
+
+                        break;
+                    case Commands.SendMsg:
                         break;
                 }
 
@@ -58,6 +67,7 @@ namespace ServerHandler
                 Console.WriteLine("\nSent Acknowledgement");
             }
         }
+
 
         ~ServerConnection()
         {

@@ -34,29 +34,79 @@ namespace ClientHandler
 
             Stream stm = ClientSocket.GetStream();
             ASCIIEncoding asen = new ASCIIEncoding();
-            Message message = new Message(Commands.Hello, Name); 
+            Message message = new MessageHello(Name); 
 
             string json = message.ToString();
-            byte[] ba = asen.GetBytes(json);
+            byte[] sent = asen.GetBytes(json);
 
-            Console.WriteLine("Transmitting.....");
+            Console.WriteLine("\nTransmitting.....\n");
+            stm.Write(sent, 0, sent.Length);
 
-            stm.Write(ba, 0, ba.Length);
-
-            byte[] bb = new byte[100];
-            int k = stm.Read(bb, 0, 100);
+            byte[] accepted = new byte[100];
+            int k = stm.Read(accepted, 0, 100);
 
             for (int i = 0; i < k; i++)
-                Console.Write(Convert.ToChar(bb[i]));
+                Console.Write(Convert.ToChar(accepted[i]));
 
-            message = JsonConvert.DeserializeObject<Message>(asen.GetString(bb));
+            var message_resp = JsonConvert.DeserializeObject<MessageHelloResponce>(asen.GetString(accepted));
 
-            var result = Enum.Parse<HelloAnswers>(message.Body);
-            if (result != HelloAnswers.OK)
+            if (message_resp.Body != HelloAnswers.OK)
             {
                 throw new Exception("Server rejected.");
             }             
         }
+
+        public List<string> RequestListToSend()
+        {
+            Stream stm = ClientSocket.GetStream();
+            ASCIIEncoding asen = new ASCIIEncoding();
+
+            Message message = new MessageRequestList();
+
+            string json = message.ToString();
+            byte[] sent = asen.GetBytes(json);
+
+            Console.WriteLine("\nRequesting.....");
+
+            stm.Write(sent, 0, sent.Length);
+
+            byte[] accepted = new byte[100];
+            int k = stm.Read(accepted, 0, 100);
+
+            for (int i = 0; i < k; i++)
+                Console.Write(Convert.ToChar(accepted[i]));
+
+            var responce = JsonConvert.DeserializeObject<MessageReturnList>(asen.GetString(accepted));
+
+            return responce.Body;
+        }
+
+        public void SendMessage(string msg, List<string> recipients)
+        {
+            Stream stm = ClientSocket.GetStream();
+            ASCIIEncoding asen = new ASCIIEncoding();
+
+            Message message = new MessageSendMsg(recipients, msg);
+
+            //sending
+            string json = message.ToString();
+
+            byte[] sent = asen.GetBytes(json);
+            Console.WriteLine("Sending.....");
+
+
+            stm.Write(sent, 0, sent.Length);
+
+            //recieving
+            byte[] accepted = new byte[100];
+            int k = stm.Read(accepted, 0, 100);
+
+            for (int i = 0; i < k; i++)
+                Console.Write(Convert.ToChar(accepted[i]));
+
+            var responce = JsonConvert.DeserializeObject<MessageReturnList>(asen.GetString(accepted));
+        }
+
 
         ~Client()
         {
