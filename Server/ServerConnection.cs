@@ -25,7 +25,7 @@ namespace ServerHandler
             {
                 byte[] b = new byte[100];
                 int k = socket.Receive(b);
-                Console.WriteLine("Recieved...");
+                Console.WriteLine("\nRecieved...\n");
 
                 for (int i = 0; i < k; i++)
                     Console.Write(Convert.ToChar(b[i]));
@@ -43,7 +43,6 @@ namespace ServerHandler
 
                         if (Server.GetServer().ClientExists(ClientName))
                             message = new MessageHelloResponce(HelloAnswers.OK);
-
                         else
                         {
                             message = new MessageHelloResponce(HelloAnswers.jopa);
@@ -51,20 +50,35 @@ namespace ServerHandler
                             socket.Close();
                             return;
                         }
-
                         break;
+
                     case Commands.GiveList:
                         msg = JsonConvert.DeserializeObject<MessageRequestList>(str);
                         message = new MessageReturnList(Server.GetServer().Clients);
-
                         break;
+
                     case Commands.SendMsg:
+                        msg = JsonConvert.DeserializeObject<MessageSendMsg>(str);
+
+                        var msgBox = Server.GetServer().MessageBox;
+                        var list_to_send = ((MessageSendMsg)msg).Body.recepients;
+
+                        foreach(var recipient in list_to_send)
+                        {
+                            if (!msgBox.ContainsKey(recipient))
+                            {
+                                msgBox.Add(recipient, new List<string>());
+                            }
+
+                            msgBox[recipient].Add(((MessageSendMsg)msg).Body.message);
+
+                            message = new MessageHello(msgBox[recipient].LastOrDefault()+"\n sent a message.");
+                        }
                         break;
                 }
 
-
                 socket.Send(asen.GetBytes(message.ToString()));
-                Console.WriteLine("\nSent Acknowledgement");
+                Console.WriteLine("\nSent Acknowledgement\n");
             }
         }
 

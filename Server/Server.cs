@@ -63,8 +63,6 @@ namespace ServerHandler
             return Clients.Contains(name);
         }
 
-        
-
         ~Server()
         {
             listener.Stop();

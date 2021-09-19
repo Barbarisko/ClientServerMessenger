@@ -55,6 +55,24 @@ namespace ClientHandler
                 throw new Exception("Server rejected.");
             }             
         }
+         public void RecieveMsg()
+        {
+            Stream stm = ClientSocket.GetStream();
+            ASCIIEncoding asen = new ASCIIEncoding();
+
+            byte[] accepted = new byte[100];
+            int k = stm.Read(accepted, 0, 100);
+
+            for (int i = 0; i < k; i++)
+                Console.Write(Convert.ToChar(accepted[i]));
+
+            var message_resp = JsonConvert.DeserializeObject<MessageHelloResponce>(asen.GetString(accepted));
+
+            if (message_resp.Body != HelloAnswers.OK)
+            {
+                throw new Exception("Server rejected.");
+            }             
+        }
 
         public List<string> RequestListToSend()
         {
@@ -94,18 +112,12 @@ namespace ClientHandler
             byte[] sent = asen.GetBytes(json);
             Console.WriteLine("Sending.....");
 
-
             stm.Write(sent, 0, sent.Length);
 
-            //recieving
-            byte[] accepted = new byte[100];
-            int k = stm.Read(accepted, 0, 100);
-
-            for (int i = 0; i < k; i++)
-                Console.Write(Convert.ToChar(accepted[i]));
-
-            var responce = JsonConvert.DeserializeObject<MessageReturnList>(asen.GetString(accepted));
+            stm.Flush();
         }
+
+
 
 
         ~Client()
