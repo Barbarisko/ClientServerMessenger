@@ -55,10 +55,18 @@ namespace ClientHandler
                 throw new Exception("Server rejected.");
             }             
         }
-         public void RecieveMsg()
+        public List<string> CheckForMsg()
         {
             Stream stm = ClientSocket.GetStream();
             ASCIIEncoding asen = new ASCIIEncoding();
+
+            Message message = new MessageCheckBox();
+
+            string json = message.ToString();
+            byte[] sent = asen.GetBytes(json);
+            stm.Write(sent, 0, sent.Length);
+
+            Console.WriteLine("\nRequesting.....");
 
             byte[] accepted = new byte[100];
             int k = stm.Read(accepted, 0, 100);
@@ -66,12 +74,19 @@ namespace ClientHandler
             for (int i = 0; i < k; i++)
                 Console.Write(Convert.ToChar(accepted[i]));
 
-            var message_resp = JsonConvert.DeserializeObject<MessageHelloResponce>(asen.GetString(accepted));
+            var message_resp = JsonConvert.DeserializeObject<Message>(asen.GetString(accepted));
 
-            if (message_resp.Body != HelloAnswers.OK)
+            if (message_resp.Command == Commands.BigFile)
             {
-                throw new Exception("Server rejected.");
-            }             
+                var message_big = JsonConvert.DeserializeObject<MessageBig>(asen.GetString(accepted));
+                accepted = new byte[message_big.Body];
+
+                stm.Read(accepted, 0, message_big.Body);
+            }
+
+            var message_list = JsonConvert.DeserializeObject<MessageReturnList>(asen.GetString(accepted));
+
+            return message_list.Body;            
         }
 
         public List<string> RequestListToSend()
@@ -118,11 +133,9 @@ namespace ClientHandler
         }
 
 
-
-
         ~Client()
         {
-            ClientSocket.Close();
+            //ClientSocket.Close();
         }
     }
 }

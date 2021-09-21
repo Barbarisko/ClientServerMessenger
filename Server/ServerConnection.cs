@@ -21,65 +21,89 @@ namespace ServerHandler
 
         public void StartProcess()
         {
-            while (true)
+            try
             {
-                byte[] b = new byte[100];
-                int k = socket.Receive(b);
-                Console.WriteLine("\nRecieved...\n");
+                while (true)
+                {
+                    byte[] b = new byte[10000];
+                    int k = socket.Receive(b);
+                    Console.WriteLine("\nRecieved...\n");
 
-                for (int i = 0; i < k; i++)
-                    Console.Write(Convert.ToChar(b[i]));
+                    for (int i = 0; i < k; i++)
+                        Console.Write(Convert.ToChar(b[i]));
 
-                ASCIIEncoding asen = new ASCIIEncoding();
-                var str = asen.GetString(b);
-                Message message = JsonConvert.DeserializeObject<Message>(str);
-                
-                object msg;
-                switch (message.Command)
-                {    
-                    case Commands.Hello:
-                        msg = JsonConvert.DeserializeObject<MessageHello>(str);
-                        ClientName = ((MessageHello)msg).Body;
+                    ASCIIEncoding asen = new ASCIIEncoding();
+                    var str = asen.GetString(b);
+                    Message message = JsonConvert.DeserializeObject<Message>(str);
 
-                        if (Server.GetServer().ClientExists(ClientName))
-                            message = new MessageHelloResponce(HelloAnswers.OK);
-                        else
-                        {
-                            message = new MessageHelloResponce(HelloAnswers.jopa);
-                            socket.Send(asen.GetBytes(message.ToString()));
-                            socket.Close();
-                            return;
-                        }
-                        break;
+                    object msg;
+                    switch (message.Command)
+                    {
+                        case Commands.Hello:
+                            msg = JsonConvert.DeserializeObject<MessageHello>(str);
+                            ClientName = ((MessageHello)msg).Body;
 
-                    case Commands.GiveList:
-                        msg = JsonConvert.DeserializeObject<MessageRequestList>(str);
-                        message = new MessageReturnList(Server.GetServer().Clients);
-                        break;
-
-                    case Commands.SendMsg:
-                        msg = JsonConvert.DeserializeObject<MessageSendMsg>(str);
-
-                        var msgBox = Server.GetServer().MessageBox;
-                        var list_to_send = ((MessageSendMsg)msg).Body.recepients;
-
-                        foreach(var recipient in list_to_send)
-                        {
-                            if (!msgBox.ContainsKey(recipient))
+                            if (Server.GetServer().ClientExists(ClientName))
+                                message = new MessageHelloResponce(HelloAnswers.OK);
+                            else
                             {
-                                msgBox.Add(recipient, new List<string>());
+                                message = new MessageHelloResponce(HelloAnswers.jopa);
+                                socket.Send(asen.GetBytes(message.ToString()));
+                                socket.Close();
+                                return;
                             }
+                            break;
 
-                            msgBox[recipient].Add(((MessageSendMsg)msg).Body.message);
+                        case Commands.GiveList:
+                            msg = JsonConvert.DeserializeObject<MessageRequestList>(str);
+                            message = new MessageReturnList(Server.GetServer().Clients);
+                            break;
 
-                            message = new MessageHello(msgBox[recipient].LastOrDefault()+"\n sent a message.");
-                        }
-                        break;
+                        case Commands.SendMsg:
+                            msg = JsonConvert.DeserializeObject<MessageSendMsg>(str);
+
+                            var msgBox = Server.GetServer().MessageBox;
+                            var list_to_send = ((MessageSendMsg)msg).Body.recepients;
+
+                            foreach (var recipient in list_to_send)
+                            {
+                                if (!msgBox.ContainsKey(recipient))
+                                {
+                                    msgBox.Add(recipient, new List<string>());
+                                }
+
+                                msgBox[recipient].Add(((MessageSendMsg)msg).Body.message);
+                            }
+                            message = null;
+
+                            break;
+
+                        case Commands.CheckMsgBox:
+                            message = new MessageReturnList(Server.GetServer().MessageBox[ClientName]);
+                            break;
+                    }
+
+                    if (message == null)
+                    {
+                        continue;
+                    }
+
+                    var bytestosend = asen.GetBytes(message.ToString());
+                    if (bytestosend.Length > 100)
+                    {
+                        socket.Send(asen.GetBytes(new MessageBig(bytestosend.Length).ToString()));
+
+                    }
+                    socket.Send(bytestosend);
+                    Console.WriteLine("\nSent Acknowledgement\n");
                 }
-
-                socket.Send(asen.GetBytes(message.ToString()));
-                Console.WriteLine("\nSent Acknowledgement\n");
             }
+            catch(Exception e)
+            {
+                socket.Close();
+                Console.WriteLine($"Client {ClientName} disconnected");
+            }
+           
         }
 
 

@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Text;
 
 namespace Protocol
 {
@@ -10,8 +11,9 @@ namespace Protocol
         HelloResponse, 
         GiveList,
         ReturnList,
-        SendMsg
-
+        SendMsg,
+        CheckMsgBox,
+        BigFile
     }
     public enum HelloAnswers
     {
@@ -20,6 +22,8 @@ namespace Protocol
     }
     public class Message
     {
+        public static readonly int StandartBufSize = 1024;
+        
         public Commands Command;
         public object Body;
 
@@ -31,6 +35,12 @@ namespace Protocol
         public override string ToString()
         {
             return JsonConvert.SerializeObject(this); ;
+        }
+
+        public byte[] ToBytes()
+        {
+            UTF8Encoding encoder = new UTF8Encoding();
+            return encoder.GetBytes(this.ToString());
         }
     }
     public class MessageHello : Message
@@ -58,7 +68,12 @@ namespace Protocol
         {
         }
     }
-    
+    public class MessageCheckBox : Message
+    {
+        public MessageCheckBox() : base(Commands.CheckMsgBox)
+        {
+        }
+    }
     public class MessageReturnList : Message
     {
         public new List<string> Body;
@@ -68,7 +83,15 @@ namespace Protocol
             Body = clients;
         }
     }
+    public class MessageBig : Message
+    {
+        public new int Body;
 
+        public MessageBig(int bodysize) : base(Commands.BigFile)
+        {
+            Body = bodysize;
+        }
+    }
     public class MessageSendMsg : Message
     {
         public struct Data

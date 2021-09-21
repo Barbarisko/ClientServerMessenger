@@ -10,32 +10,64 @@ namespace ClientServerMessenger
 {
     class Program
     {
+        static List<string> registeredUsers;
         static void Main(string[] args)
         {
-            Console.WriteLine("Client Started");
-            Console.WriteLine("Write your client name:");
+            Random r = new Random();
+            Console.BackgroundColor = (ConsoleColor)r.Next(0, 16);
+            Console.WriteLine("CLIENT SIDE");
+            Console.BackgroundColor = ConsoleColor.Black;
+            Console.WriteLine("\nWrite your client name:");
 
             var name = Console.ReadLine();
             try
             {
                 Client client1 = new Client(name, "127.0.0.1", 8001);
-
                 client1.Hello();
 
-                var gen_list = client1.RequestListToSend();
-                var list_to_send = new List<string>();
-
-                for(int i=0; i< gen_list.Count; i++)
+                while (true)
                 {
-                    Console.WriteLine("\n"+gen_list[i]);
-                    if ((i + 1) % 2 == 0)
-                        list_to_send.Add(gen_list[i]);
-                }
+                    Console.WriteLine("\nWelcome to the simple mailing. This is what you can do: " +
+                                    "\n1 - Request list to choose recipients" +
+                                    "\n2 - Check mailbox" +
+                                    "\n \nWhat to do?(insert command number)");
+                    var command = Console.ReadLine();//parse to enum
 
-                var message = Console.ReadLine();
+                    switch (command)
+                    {
+                        case "1":
+                            registeredUsers = client1.RequestListToSend();
 
-                client1.SendMessage($"\nFrom {client1.Name}: \n {message}", list_to_send);
+                            for (int i = 0; i < registeredUsers.Count; i++)
+                                Console.WriteLine("\n" + registeredUsers[i]);
 
+                            var list_to_send = new List<string>();
+
+                            Console.WriteLine("\nSending to (write names separating with comma):");
+                            args = Console.ReadLine().Split(", ");
+                            foreach (var rec in args)
+                            {
+                                list_to_send.Add(rec);
+                            }
+
+                            Console.WriteLine("\nMessage:");
+                            var message = Console.ReadLine();
+
+                            client1.SendMessage($"\nFrom {client1.Name}: \n {message}", list_to_send);
+
+                            break;
+
+                        case "2":
+                            var messages = client1.CheckForMsg();
+
+                            if (messages.Count==0)
+                                Console.WriteLine("0 new messages");
+                            else
+                                foreach (var m in messages) 
+                                    Console.WriteLine(m);                  
+                            break;
+                    }
+                }         
             }
             catch (Exception e)
             {

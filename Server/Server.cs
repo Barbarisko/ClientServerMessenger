@@ -21,8 +21,7 @@ namespace ServerHandler
         private Server()
         {
             Clients = new List<string>() {"tuts", "tuts2" };
-            MessageBox = new Dictionary<string, List<string>>();
-
+            MessageBox = InitMessageBox(Clients);
             IPAddress ipAd = IPAddress.Parse("127.0.0.1");
 
             listener = new TcpListener(ipAd, 8001);
@@ -56,6 +55,21 @@ namespace ServerHandler
 
                 thread.Start();
             }
+        }
+
+        private List<string> InitClients()
+        {
+            return Clients;
+        }
+        private Dictionary<string, List<string>> InitMessageBox(List<string> names)
+        {
+            MessageBox = new Dictionary<string, List<string>>();
+
+            foreach(var i in names)
+            {
+                MessageBox.Add(i, new List<string>());
+            }
+            return MessageBox;
         }
 
         public bool ClientExists(string name)
