@@ -12,8 +12,11 @@ namespace ServerHandler
    public  class ServerConnection
     {
         Socket socket;
-
         string ClientName;
+
+        Message message;
+        ASCIIEncoding asen = new ASCIIEncoding();
+
         public ServerConnection(Socket socket)
         {
             this.socket = socket;
@@ -25,37 +28,35 @@ namespace ServerHandler
             {
                 while (true)
                 {
-                    byte[] b = new byte[10000];
+                    byte[] b = new byte[Protocol.Protocol.StandartBufSize];
                     int k = socket.Receive(b);
-                    Console.WriteLine("\nRecieved...\n");
+                    Console.WriteLine("\nRecieved...");
 
                     for (int i = 0; i < k; i++)
                         Console.Write(Convert.ToChar(b[i]));
 
-                    ASCIIEncoding asen = new ASCIIEncoding();
                     var str = asen.GetString(b);
-                    Message message = JsonConvert.DeserializeObject<Message>(str);
+                    message = JsonConvert.DeserializeObject<Message>(str);
 
                     object msg;
                     switch (message.Command)
                     {
                         case Commands.Hello:
                             msg = JsonConvert.DeserializeObject<MessageHello>(str);
+
                             ClientName = ((MessageHello)msg).Body;
 
-                            if (Server.GetServer().ClientExists(ClientName))
-                                message = new MessageHelloResponce(HelloAnswers.OK);
-                            else
+                            if (!Server.GetServer().ClientExists(ClientName)) 
                             {
-                                message = new MessageHelloResponce(HelloAnswers.jopa);
+                                message = new MessageHelloResponce(HelloAnswers.NE_OK);
                                 socket.Send(asen.GetBytes(message.ToString()));
-                                socket.Close();
+                                //socket.Close();
                                 return;
                             }
+                            message = new MessageHelloResponce(HelloAnswers.OK);
                             break;
 
                         case Commands.GiveList:
-                            msg = JsonConvert.DeserializeObject<MessageRequestList>(str);
                             message = new MessageReturnList(Server.GetServer().Clients);
                             break;
 
@@ -68,9 +69,7 @@ namespace ServerHandler
                             foreach (var recipient in list_to_send)
                             {
                                 if (!msgBox.ContainsKey(recipient))
-                                {
-                                    msgBox.Add(recipient, new List<string>());
-                                }
+                                    msgBox.Add(recipient, new List<string>());     
 
                                 msgBox[recipient].Add(((MessageSendMsg)msg).Body.message);
                             }
@@ -95,17 +94,15 @@ namespace ServerHandler
 
                     }
                     socket.Send(bytestosend);
-                    Console.WriteLine("\nSent Acknowledgement\n");
+                    Console.WriteLine("\nSent response\n");
                 }
             }
             catch(Exception e)
             {
                 socket.Close();
                 Console.WriteLine($"Client {ClientName} disconnected");
-            }
-           
+            }           
         }
-
 
         ~ServerConnection()
         {

@@ -18,12 +18,10 @@ namespace Protocol
     public enum HelloAnswers
     {
         OK, 
-        jopa
+        NE_OK
     }
     public class Message
-    {
-        public static readonly int StandartBufSize = 1024;
-        
+    {       
         public Commands Command;
         public object Body;
 

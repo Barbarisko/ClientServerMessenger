@@ -1,6 +1,7 @@
-﻿using Protocol;
+﻿
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -14,18 +15,18 @@ namespace ServerHandler
     {
         public List<string> Clients;
         public Dictionary<string, List<string>> MessageBox;
+
         TcpListener listener;
         
         private static Server server;
 
         private Server()
         {
-            Clients = new List<string>() {"tuts", "tuts2" };
+            Clients = InitClients();
             MessageBox = InitMessageBox(Clients);
-            IPAddress ipAd = IPAddress.Parse("127.0.0.1");
+            IPAddress ipAd = IPAddress.Parse(Protocol.Protocol.IpAddress);
 
             listener = new TcpListener(ipAd, 8001);
-
         }
 
         public static Server GetServer()
@@ -40,7 +41,7 @@ namespace ServerHandler
             /* Start Listeneting at the specified port */
             listener.Start();
 
-            Console.WriteLine("The server is running at port 8001...");
+            Console.WriteLine($"The server is running at port {Protocol.Protocol.ServerPort}...");
             Console.WriteLine("The local End point is  :" +
                               listener.LocalEndpoint);
             Console.WriteLine("Waiting for a connection.....");
@@ -59,7 +60,12 @@ namespace ServerHandler
 
         private List<string> InitClients()
         {
-            return Clients;
+            var clientstring = File.ReadAllLines("Clients.txt");
+            foreach(string s in clientstring)
+            {
+                s.Trim(new Char[] { ',', ' ', '\n' });
+            }
+            return clientstring.ToList();
         }
         private Dictionary<string, List<string>> InitMessageBox(List<string> names)
         {

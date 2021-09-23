@@ -19,7 +19,7 @@ namespace ServerHandler
             }
             catch (Exception e)
             {
-                Console.WriteLine("Error..... " + e.StackTrace);
+                Console.WriteLine("Error.....\n " + e.StackTrace);
             }
         }
     }

@@ -13,26 +13,21 @@ namespace ClientServerMessenger
         static List<string> registeredUsers;
         static void Main(string[] args)
         {
-            Random r = new Random();
-            Console.BackgroundColor = (ConsoleColor)r.Next(0, 16);
-            Console.WriteLine("CLIENT SIDE");
-            Console.BackgroundColor = ConsoleColor.Black;
-            Console.WriteLine("\nWrite your client name:");
+            CreateColorLabel("CLIENT SIDE");
+            SendSystemMessage("\nWrite your client name:");
 
             var name = Console.ReadLine();
             try
             {
-                Client client1 = new Client(name, "127.0.0.1", 8001);
+                Client client1 = new Client(name, Protocol.Protocol.IpAddress, Protocol.Protocol.ServerPort);
                 client1.Hello();
 
                 while (true)
                 {
-                    Console.WriteLine("\nWelcome to the simple mailing. This is what you can do: " +
-                                    "\n1 - Request list to choose recipients" +
-                                    "\n2 - Check mailbox" +
-                                    "\n \nWhat to do?(insert command number)");
-                    var command = Console.ReadLine();//parse to enum
+                    Console.Clear();
+                    SendSystemMessage(PrintMenu(client1.Name));
 
+                    var command = Console.ReadLine();//parse to enum
                     switch (command)
                     {
                         case "1":
@@ -43,36 +38,68 @@ namespace ClientServerMessenger
 
                             var list_to_send = new List<string>();
 
-                            Console.WriteLine("\nSending to (write names separating with comma):");
+                            SendSystemMessage("\nSending to (write names separating with comma):");
                             args = Console.ReadLine().Split(", ");
                             foreach (var rec in args)
                             {
                                 list_to_send.Add(rec);
                             }
 
-                            Console.WriteLine("\nMessage:");
-                            var message = Console.ReadLine();
+                            SendSystemMessage("\nMessage:");
+                            var msg_to_send = Console.ReadLine();
 
-                            client1.SendMessage($"\nFrom {client1.Name}: \n {message}", list_to_send);
+                            client1.BroadcastMessage($"From {client1.Name}:\n\t{msg_to_send}\n", list_to_send);
 
                             break;
 
                         case "2":
                             var messages = client1.CheckForMsg();
 
-                            if (messages.Count==0)
-                                Console.WriteLine("0 new messages");
+                            if (messages.Count == 0)
+                                CreateColorLabel("0 new messages");
+
                             else
                                 foreach (var m in messages) 
-                                    Console.WriteLine(m);                  
+                                    Console.WriteLine(m);
+                            Console.ReadKey();
+
+                            break;
+                        default:
+                            SendSystemMessage("No other options");
+                            Console.ReadKey();
                             break;
                     }
                 }         
             }
             catch (Exception e)
             {
-                Console.WriteLine("\nError..... " + e.StackTrace);
+                Console.Clear();
+                Console.WriteLine(e.Message);
+                Console.ReadKey();
+                Console.Clear();
             }
+        }
+
+        private static void CreateColorLabel(string text)
+        {
+            Random r = new Random();
+            Console.BackgroundColor = (ConsoleColor)r.Next(0, 16);
+            Console.WriteLine($"{text}");
+            Console.BackgroundColor = ConsoleColor.Black;            
+        }
+        private static void SendSystemMessage(string text)
+        {
+            Console.ForegroundColor = ConsoleColor.DarkYellow;
+            Console.WriteLine($"{text}");
+            Console.ResetColor();           
+        }
+
+        private static string PrintMenu(string name)
+        {
+            return $"\n{name}, welcome to the simple mailing. This is what you can do: " +
+                "\n1 - Request list to choose recipients" +
+                "\n2 - Check mailbox" +
+                "\n \nWhat to do?(insert command number)";
         }
     }
 }
